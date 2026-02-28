@@ -1,0 +1,430 @@
+import { useState, useCallback, useEffect } from 'react';
+import { sendRequest, getCollections, saveRequest } from './api';
+import { Sidebar } from './components/Sidebar';
+import { RequestTabs } from './components/RequestTabs';
+import { RequestBuilder } from './components/RequestBuilder';
+import { ResponseView } from './components/ResponseView';
+import { StorageSettings } from './components/StorageSettings';
+import { GlobalSearch } from './components/GlobalSearch';
+import { SaveToCollectionModal } from './components/SaveToCollectionModal';
+import type { Collection, HttpResponse, RequestTab, HeaderPair, ParamPair } from './types';
+import './App.css';
+
+const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
+
+interface TabData {
+  method: string;
+  url: string;
+  params: ParamPair[];
+  headers: HeaderPair[];
+  body: string | null;
+}
+
+function generateId() {
+  return `tab-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function App() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [tabs, setTabs] = useState<RequestTab[]>([]);
+  const [tabData, setTabData] = useState<Record<string, TabData>>({});
+  const [activeTabId, setActiveTabId] = useState<string | null>(null);
+  const [response, setResponse] = useState<HttpResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [collectionsLoading, setCollectionsLoading] = useState(true);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [tabLinks, setTabLinks] = useState<Record<string, { requestId: string; parentId: string }>>({});
+
+  const refreshCollections = useCallback(() => {
+    setCollectionsLoading(true);
+    getCollections()
+      .then(setCollections)
+      .catch(console.error)
+      .finally(() => setCollectionsLoading(false));
+  }, []);
+
+  useEffect(() => {
+    refreshCollections();
+  }, [refreshCollections]);
+
+  const ensureTab = useCallback(() => {
+    if (tabs.length === 0) {
+      const id = generateId();
+      const newTab: RequestTab = {
+        id,
+        name: 'New Request',
+        method: 'GET',
+        url: 'https://httpbin.org/get',
+      };
+      setTabs([newTab]);
+      setTabData({
+        [id]: {
+          method: 'GET',
+          url: 'https://httpbin.org/get',
+          params: [{ key: '', value: '', enabled: true }],
+          headers: [{ key: 'Content-Type', value: 'application/json', enabled: true }],
+          body: null,
+        },
+      });
+      setActiveTabId(id);
+    }
+  }, [tabs.length]);
+
+  useEffect(() => {
+    ensureTab();
+  }, [ensureTab]);
+
+  const addTab = useCallback(() => {
+    const id = generateId();
+    const newTab: RequestTab = {
+      id,
+      name: 'New Request',
+      method: 'GET',
+      url: 'https://httpbin.org/get',
+    };
+    setTabs((prev) => [...prev, newTab]);
+    setTabData((prev) => ({
+      ...prev,
+      [id]: {
+        method: 'GET',
+        url: 'https://httpbin.org/get',
+        params: [{ key: '', value: '', enabled: true }],
+        headers: [{ key: 'Content-Type', value: 'application/json', enabled: true }],
+        body: null,
+      },
+    }));
+    setActiveTabId(id);
+  }, []);
+
+  const closeTab = useCallback((id: string) => {
+    setTabLinks((prev) => {
+      const { [id]: _, ...rest } = prev;
+      return rest;
+    });
+    setTabs((prev) => {
+      const next = prev.filter((t) => t.id !== id);
+      const wasActive = activeTabId === id;
+      if (wasActive && next.length > 0) {
+        setActiveTabId(next[0].id);
+      } else if (next.length === 0) {
+        setActiveTabId(null);
+      }
+      return next;
+    });
+    setTabData((prev) => {
+      const { [id]: _, ...rest } = prev;
+      return rest;
+    });
+  }, [activeTabId]);
+
+  const handleSelectRequest = useCallback(
+    (req: {
+      id: string;
+      name: string;
+      method: string;
+      url: string;
+      params: ParamPair[];
+      headers: HeaderPair[];
+      body: string | null;
+      parentId: string;
+    }) => {
+      const id = activeTabId ?? generateId();
+      if (!activeTabId) {
+        const newTab: RequestTab = { id, name: req.name, method: req.method, url: req.url };
+        setTabs([newTab]);
+        setActiveTabId(id);
+      } else {
+        setTabs((prev) =>
+          prev.map((t) => (t.id === id ? { ...t, name: req.name, method: req.method, url: req.url } : t))
+        );
+      }
+      setTabData((prev) => ({
+        ...prev,
+        [id]: {
+          method: req.method,
+          url: req.url,
+          params: req.params,
+          headers: req.headers,
+          body: req.body,
+        },
+      }));
+      setTabLinks((prev) => ({ ...prev, [id]: { requestId: req.id, parentId: req.parentId } }));
+    },
+    [activeTabId]
+  );
+
+  const handleSend = useCallback(async () => {
+    if (!activeTabId) return;
+    const data = tabData[activeTabId];
+    if (!data) return;
+
+    setLoading(true);
+    setResponse(null);
+    setError(null);
+
+    try {
+      const buildUrl = () => {
+        const enabled = data.params.filter((p) => p.enabled && p.key.trim());
+        if (enabled.length === 0) return data.url;
+        const u = new URL(data.url);
+        enabled.forEach((p) => u.searchParams.set(p.key, p.value));
+        return u.toString();
+      };
+
+      const res = await sendRequest({
+        method: data.method,
+        url: buildUrl(),
+        headers: data.headers.filter((h) => h.enabled && h.key.trim()),
+        params: data.params,
+        body: ['POST', 'PUT', 'PATCH'].includes(data.method) ? data.body : null,
+      });
+      setResponse(res);
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTabId, tabData]);
+
+  const handleSave = useCallback(async () => {
+    if (!activeTabId || !isTauri) return;
+    const data = tabData[activeTabId];
+    if (!data) return;
+    const link = tabLinks[activeTabId];
+    if (link) {
+      try {
+        await saveRequest(link.parentId, {
+          id: link.requestId,
+          name: tabs.find((t) => t.id === activeTabId)?.name ?? (data.url || 'Request'),
+          method: data.method,
+          url: data.url,
+          params: data.params,
+          headers: data.headers,
+          body: data.body,
+        });
+        refreshCollections();
+      } catch (err) {
+        alert(String(err));
+      }
+    } else {
+      setSaveModalOpen(true);
+    }
+  }, [activeTabId, tabData, tabLinks, tabs, refreshCollections]);
+
+  const handleNewRequestInFolder = useCallback(
+    async (parentId: string) => {
+      if (!isTauri) return;
+      try {
+        const saved = await saveRequest(parentId, {
+          name: 'New Request',
+          method: 'GET',
+          url: 'https://httpbin.org/get',
+          params: [{ key: '', value: '', enabled: true }],
+          headers: [{ key: 'Content-Type', value: 'application/json', enabled: true }],
+          body: null,
+        });
+        if (saved.type === 'request') {
+          const id = generateId();
+          const newTab: RequestTab = {
+            id,
+            name: saved.name,
+            method: saved.method,
+            url: saved.url,
+          };
+          setTabs((prev) => [...prev, newTab]);
+          setTabData((prev) => ({
+            ...prev,
+            [id]: {
+              method: saved.method,
+              url: saved.url,
+              params: saved.params ?? [{ key: '', value: '', enabled: true }],
+              headers: saved.headers ?? [{ key: 'Content-Type', value: 'application/json', enabled: true }],
+              body: saved.body ?? null,
+            },
+          }));
+          setTabLinks((prev) => ({
+            ...prev,
+            [id]: { requestId: saved.id, parentId },
+          }));
+          setActiveTabId(id);
+          refreshCollections();
+        }
+      } catch (err) {
+        alert(String(err));
+      }
+    },
+    [refreshCollections]
+  );
+
+  const handleSaveToLocation = useCallback(
+    async (parentId: string, name: string) => {
+      if (!activeTabId || !isTauri) return;
+      const data = tabData[activeTabId];
+      if (!data) return;
+      try {
+        const saved = await saveRequest(parentId, {
+          name,
+          method: data.method,
+          url: data.url,
+          params: data.params,
+          headers: data.headers,
+          body: data.body,
+        });
+        if (saved.type === 'request') {
+          setTabLinks((prev) => ({
+            ...prev,
+            [activeTabId]: { requestId: saved.id, parentId },
+          }));
+        }
+        refreshCollections();
+        setSaveModalOpen(false);
+      } catch (err) {
+        alert(String(err));
+      }
+    },
+    [activeTabId, tabData, refreshCollections]
+  );
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        handleSend();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+        e.preventDefault();
+        setSidebarCollapsed((c) => !c);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
+        e.preventDefault();
+        setSearchOpen((s) => !s);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [handleSend, handleSave]);
+
+  const activeData = activeTabId ? tabData[activeTabId] : null;
+
+  const updateTabData = useCallback((updates: Partial<TabData>) => {
+    if (!activeTabId) return;
+    setTabData((prev) => {
+      const current = prev[activeTabId];
+      if (!current) return prev;
+      return { ...prev, [activeTabId]: { ...current, ...updates } };
+    });
+    if (updates.method || updates.url || updates.method) {
+      setTabs((prev) =>
+        prev.map((t) =>
+          t.id === activeTabId
+            ? {
+                ...t,
+                method: updates.method ?? t.method,
+                url: updates.url ?? t.url,
+              }
+            : t
+        )
+      );
+    }
+  }, [activeTabId]);
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <button
+          type="button"
+          className="sidebar-toggle"
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          title={sidebarCollapsed ? 'Show sidebar (Ctrl+\\)' : 'Hide sidebar (Ctrl+\\)'}
+        >
+          {sidebarCollapsed ? '☰' : '✕'}
+        </button>
+        <h1 className="app-title">Saola</h1>
+        <span className="privacy-indicator" title="Sync destination: Local storage">
+          ● Local
+        </span>
+        <button
+          type="button"
+          className="settings-btn"
+          onClick={() => setSettingsOpen(!settingsOpen)}
+          title="Storage settings"
+        >
+          ⚙
+        </button>
+      </header>
+      <GlobalSearch
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+      />
+      {settingsOpen && (
+        <div className="settings-panel">
+          <StorageSettings />
+        </div>
+      )}
+
+      <SaveToCollectionModal
+        open={saveModalOpen}
+        collections={collections}
+        defaultName={tabs.find((t) => t.id === activeTabId)?.name ?? 'Request'}
+        onSave={handleSaveToLocation}
+        onClose={() => setSaveModalOpen(false)}
+      />
+
+      <div className="app-body">
+        <Sidebar
+          collections={collections}
+          loading={collectionsLoading}
+          onRefresh={refreshCollections}
+          onNewRequestInFolder={handleNewRequestInFolder}
+          onSelectRequest={handleSelectRequest}
+          collapsed={sidebarCollapsed}
+        />
+        <main className="main-content">
+          <RequestTabs
+            tabs={tabs}
+            activeId={activeTabId}
+            onSelect={setActiveTabId}
+            onClose={closeTab}
+            onNew={addTab}
+          />
+          <div className="main-content-inner">
+            {activeData ? (
+              <>
+                <RequestBuilder
+                  method={activeData.method}
+                  url={activeData.url}
+                  params={activeData.params}
+                  headers={activeData.headers}
+                  body={activeData.body}
+                  onMethodChange={(m) => updateTabData({ method: m })}
+                  onUrlChange={(u) => updateTabData({ url: u })}
+                  onParamsChange={(p) => updateTabData({ params: p })}
+                  onHeadersChange={(h) => updateTabData({ headers: h })}
+                  onBodyChange={(b) => updateTabData({ body: b })}
+                  onSend={handleSend}
+                  isLoading={loading}
+                />
+                <ResponseView response={response} isLoading={loading} error={error} />
+              </>
+            ) : (
+              <div className="empty-state">
+                <p>No request open. Click a request in the sidebar or create a new tab.</p>
+                <button type="button" onClick={addTab}>New Request</button>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export default App;

@@ -1,0 +1,114 @@
+---
+description: Best practices for Tauri backend development in Rust
+globs: **/*.rs
+alwaysApply: false
+---
+
+# Tauri Rust Best Practices
+
+## Command Design
+
+- Every `#[tauri::command]` must return `Result<T, E>` where `E` implements `serde::Serialize`. Never unwrap or panic in commands.
+- Keep commands thin — delegate logic to dedicated service modules. Commands should only parse input, call a service, and map the result.
+- Use `tauri::State<'_, T>` for shared state; never store global mutable state outside Tauri's managed state.
+
+```rust
+// ❌ BAD — logic in the command, unwrap, no Result
+#[tauri::command]
+fn get_collection(path: String) -> String {
+    std::fs::read_to_string(&path).unwrap()
+}
+
+// ✅ GOOD — thin command, proper error type, delegates to service
+#[tauri::command]
+async fn get_collection(
+    path: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<Collection, AppError> {
+    state.collection_service.load(&path).await
+}
+```
+
+## Error Handling
+
+- Define a single `AppError` enum (or struct) that wraps all domain errors and implements `serde::Serialize` so the frontend receives structured errors.
+- Use `thiserror` for ergonomic `From` impls; avoid manual `map_err` chains when a blanket conversion exists.
+- Never use `.unwrap()` or `.expect()` in production paths. Reserve them for values proven at compile time (e.g., static regex).
+
+```rust
+#[derive(Debug, thiserror::Error, serde::Serialize)]
+pub enum AppError {
+    #[error("IO error: {0}")]
+    Io(String),
+    #[error("Encryption failed: {0}")]
+    Crypto(String),
+    #[error("Sync error: {0}")]
+    Sync(String),
+}
+
+impl From<std::io::Error> for AppError {
+    fn from(e: std::io::Error) -> Self {
+        AppError::Io(e.to_string())
+    }
+}
+```
+
+## Async & Concurrency
+
+- Prefer `async` commands for any I/O (file, network, crypto). Tauri runs async commands on a thread pool, keeping the main thread responsive.
+- Use `tokio::sync::RwLock` (not `std::sync::Mutex`) inside `tauri::State` for async-safe shared state.
+- Avoid blocking the async runtime — offload CPU-heavy work (encryption, large JSON parsing) with `tokio::task::spawn_blocking`.
+
+## Security
+
+- Treat all IPC input from the frontend as untrusted. Validate and sanitize paths, URLs, and credentials in the Rust layer before use.
+- Never log or serialize secrets (Master Password, API tokens) in plain text. Scrub sensitive fields from error messages.
+- Use the OS keychain (`keyring` crate) for token storage — never write tokens to plain files.
+- Scope filesystem access via Tauri's `allowlist` and `scope` configuration; never expose unrestricted `fs` or `shell` APIs.
+
+## State Management
+
+- Wrap shared services in `Arc` and register them with `app.manage()` during setup. Access via `tauri::State` in commands.
+- Separate state by concern: `DbState`, `SyncState`, `CryptoState` rather than one monolith.
+
+```rust
+fn main() {
+    tauri::Builder::default()
+        .manage(AppState::new())
+        .manage(CryptoState::new())
+        .invoke_handler(tauri::generate_handler![get_collection, send_request])
+        .run(tauri::generate_context!())
+        .expect("failed to launch");
+}
+```
+
+## Project Structure
+
+Organize the `src-tauri/src/` directory by domain:
+
+```
+src-tauri/src/
+├── main.rs          # Tauri setup, plugin registration
+├── commands/        # #[tauri::command] handlers (thin)
+├── services/        # Business logic (sync, crypto, request engine)
+├── models/          # Domain structs, DTOs, serde models
+├── errors.rs        # AppError enum
+└── state.rs         # Managed state definitions
+```
+
+## Events & IPC
+
+- Use `app_handle.emit_all()` for backend-to-frontend events (progress, sync status). Define event name constants to avoid typos.
+- Prefer typed payloads (`#[derive(Serialize)]` structs) over ad-hoc JSON for all IPC — both commands and events.
+
+## Testing
+
+- Unit-test service modules independently of Tauri by keeping them framework-agnostic.
+- Use `mockall` or trait objects to mock I/O boundaries (file system, HTTP, cloud APIs).
+- Integration-test commands with `tauri::test::mock_builder` when available.
+
+## Dependencies & Crates
+
+- Pin exact versions for security-critical crates (`aes-gcm`, `ring`, `keyring`).
+- Prefer well-audited crates from the RustSec advisory database.
+- Run `cargo audit` in CI to catch known vulnerabilities.

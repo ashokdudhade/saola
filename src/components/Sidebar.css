@@ -1,0 +1,208 @@
+.sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sidebar-new-btn {
+  padding: 6px 10px;
+  background: var(--accent-muted);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.sidebar-new-btn:hover {
+  background: var(--accent);
+  color: #000;
+}
+
+.sidebar-empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.sidebar-empty-btn {
+  margin-top: 12px;
+  padding: 10px 20px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-md);
+  color: #000;
+  font-weight: 700;
+}
+
+.sidebar-empty-btn:hover {
+  background: var(--accent-hover);
+}
+
+.sidebar-context-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 140px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 6px 0;
+}
+
+.sidebar-context-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar-context-menu button:hover {
+  background: var(--bg-hover);
+}
+
+.sidebar-rename-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+}
+
+.sidebar-rename-modal {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  min-width: 280px;
+}
+
+.sidebar-rename-modal label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.sidebar-rename-modal input {
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+
+.sidebar-rename-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 8px;
+}
+
+.sidebar-loading {
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.collection {
+  margin-bottom: 16px;
+}
+
+.collection-name {
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.collection-folder {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: default;
+  border-radius: var(--radius-sm);
+}
+
+.collection-folder:hover {
+  background: var(--bg-hover);
+}
+
+.collection-folder .folder-icon {
+  margin-right: 8px;
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.collection-request {
+  padding: 10px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+
+.collection-request:hover {
+  background: var(--bg-elevated);
+}
+
+.collection-request:active {
+  background: var(--bg-hover);
+}
+
+.method-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  min-width: 40px;
+  text-align: center;
+}
+
+.method-badge.method-get { background: rgba(34, 197, 94, 0.2); color: var(--status-success); }
+.method-badge.method-post { background: var(--accent-muted); color: var(--accent); }
+.method-badge.method-put { background: rgba(59, 130, 246, 0.2); color: var(--status-redirect); }
+.method-badge.method-patch { background: rgba(249, 115, 22, 0.2); color: var(--status-client-error); }
+.method-badge.method-delete { background: rgba(239, 68, 68, 0.2); color: var(--status-server-error); }
+.method-badge.method-head,
+.method-badge.method-options { background: var(--bg-hover); color: var(--text-muted); }

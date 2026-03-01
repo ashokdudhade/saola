@@ -11,7 +11,7 @@ const ghBase = `https://github.com/${ghOrg}/${ghRepo}`;
 const config: Config = {
   title: 'Saola',
   tagline: 'Secure & Private API Development Platform',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/logo.png',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -55,7 +55,7 @@ const config: Config = {
 
   themeConfig: {
     // Replace with your project's social card
-    image: 'img/docusaurus-social-card.jpg',
+    image: 'img/logo.png',
     colorMode: {
       respectPrefersColorScheme: true,
     },
@@ -63,7 +63,7 @@ const config: Config = {
       title: 'Saola',
       logo: {
         alt: 'Saola Logo',
-        src: 'img/logo.svg',
+        src: 'img/logo.png',
       },
       items: [
         {

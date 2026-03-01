@@ -1,5 +1,9 @@
 # Saola
 
+<p align="center">
+  <img src="assets/logo.png" alt="Saola Logo" width="200" />
+</p>
+
 Secure & Private API Development Platform — cross-platform desktop API client focused on **privacy, speed, and user-owned data**.
 
 ## Phases (from agent.md)

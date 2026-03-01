@@ -4,11 +4,11 @@ import {
   createFolder,
   renameItem,
   deleteItem,
+  saveRequest,
+  isTauri,
 } from '../api';
 import type { Collection, CollectionItem } from '../types';
 import './Sidebar.css';
-
-const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
 
 interface SidebarProps {
   collections: Collection[];
@@ -34,6 +34,14 @@ interface ContextMenu {
   type: 'collection' | 'folder' | 'request';
   id: string;
   name: string;
+  parentId?: string;
+  requestData?: {
+    method: string;
+    url: string;
+    params: { key: string; value: string; enabled: boolean }[];
+    headers: { key: string; value: string; enabled: boolean }[];
+    body: string | null;
+  };
 }
 
 const defaultParams = [{ key: '', value: '', enabled: true }];
@@ -49,7 +57,14 @@ function CollectionNode({
   item: CollectionItem;
   parentId: string;
   onSelectRequest: SidebarProps['onSelectRequest'];
-  onContextMenu: (e: React.MouseEvent, type: 'folder' | 'request', id: string, name: string) => void;
+  onContextMenu: (
+    e: React.MouseEvent,
+    type: 'folder' | 'request',
+    id: string,
+    name: string,
+    parentId?: string,
+    requestData?: ContextMenu['requestData']
+  ) => void;
   depth: number;
 }) {
   if (item.type === 'folder') {
@@ -92,7 +107,15 @@ function CollectionNode({
           parentId,
         })
       }
-      onContextMenu={(e) => onContextMenu(e, 'request', item.id, item.name)}
+      onContextMenu={(e) =>
+        onContextMenu(e, 'request', item.id, item.name, parentId, {
+          method: item.method,
+          url: item.url,
+          params: item.params ?? defaultParams,
+          headers: item.headers ?? defaultHeaders,
+          body: item.body ?? null,
+        })
+      }
     >
       <span className={`method-badge method-${(item.method || 'get').toLowerCase()}`}>
         {item.method}
@@ -120,10 +143,17 @@ export function Sidebar({
   }, []);
 
   const handleContextMenu = useCallback(
-    (e: React.MouseEvent, type: 'collection' | 'folder' | 'request', id: string, name: string) => {
+    (
+      e: React.MouseEvent,
+      type: 'collection' | 'folder' | 'request',
+      id: string,
+      name: string,
+      parentId?: string,
+      requestData?: ContextMenu['requestData']
+    ) => {
       e.preventDefault();
       e.stopPropagation();
-      setContextMenu({ x: e.clientX, y: e.clientY, type, id, name });
+      setContextMenu({ x: e.clientX, y: e.clientY, type, id, name, parentId, requestData });
     },
     []
   );
@@ -191,8 +221,37 @@ export function Sidebar({
     [onRefresh]
   );
 
+  const handleDuplicate = useCallback(
+    async () => {
+      if (!isTauri || !contextMenu || contextMenu.type !== 'request') return;
+      const { parentId, requestData, name } = contextMenu;
+      if (!parentId || !requestData) return;
+      setContextMenu(null);
+      try {
+        await saveRequest(parentId, {
+          name: `${name} (copy)`,
+          method: requestData.method,
+          url: requestData.url,
+          params: requestData.params,
+          headers: requestData.headers,
+          body: requestData.body,
+        });
+        onRefresh();
+      } catch (err) {
+        console.error(err);
+        alert(String(err));
+      }
+    },
+    [contextMenu, onRefresh]
+  );
+
   const runContextAction = useCallback(
     (action: string) => {
+      if (action === 'new_collection') {
+        setContextMenu(null);
+        handleNewCollection();
+        return;
+      }
       if (!contextMenu) return;
       const { id } = contextMenu;
       if (action === 'new_folder') handleNewFolder(id);
@@ -202,9 +261,10 @@ export function Sidebar({
       } else if (action === 'rename')
         setRenameTarget({ id, current: contextMenu.name });
       else if (action === 'delete') handleDelete(id);
+      else if (action === 'duplicate') handleDuplicate();
       setContextMenu(null);
     },
-    [contextMenu, handleNewFolder, handleDelete, onNewRequestInFolder]
+    [contextMenu, handleNewFolder, handleDelete, onNewRequestInFolder, handleDuplicate]
   );
 
   if (collapsed) return null;
@@ -220,11 +280,28 @@ export function Sidebar({
             onClick={handleNewCollection}
             title="New collection"
           >
-            +
+            + New
           </button>
         )}
       </div>
-      <div className="sidebar-content">
+      <div
+        className="sidebar-content"
+        onContextMenu={
+          isTauri
+            ? (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setContextMenu({
+                  x: e.clientX,
+                  y: e.clientY,
+                  type: 'collection',
+                  id: '__sidebar__',
+                  name: '',
+                });
+              }
+            : undefined
+        }
+      >
         {loading ? (
           <div className="sidebar-loading">Loading...</div>
         ) : collections.length === 0 ? (
@@ -250,9 +327,7 @@ export function Sidebar({
                   item={item}
                   parentId={col.id}
                   onSelectRequest={onSelectRequest}
-                  onContextMenu={(e, type) =>
-                    handleContextMenu(e, type, item.id, item.name)
-                  }
+                  onContextMenu={handleContextMenu}
                   depth={0}
                 />
               ))}
@@ -267,8 +342,16 @@ export function Sidebar({
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
-          {contextMenu.type === 'collection' && (
+          {contextMenu.type === 'collection' && contextMenu.id === '__sidebar__' && (
+            <button type="button" onClick={() => runContextAction('new_collection')}>
+              New Collection
+            </button>
+          )}
+          {contextMenu.type === 'collection' && contextMenu.id !== '__sidebar__' && (
             <>
+              <button type="button" onClick={() => runContextAction('new_collection')}>
+                New Collection
+              </button>
               <button type="button" onClick={() => runContextAction('new_folder')}>
                 New Folder
               </button>
@@ -301,6 +384,9 @@ export function Sidebar({
           )}
           {contextMenu.type === 'request' && (
             <>
+              <button type="button" onClick={() => runContextAction('duplicate')}>
+                Duplicate
+              </button>
               <button type="button" onClick={() => runContextAction('rename')}>
                 Rename
               </button>

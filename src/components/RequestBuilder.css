@@ -59,6 +59,24 @@
   color: var(--text-muted);
 }
 
+.save-btn,
+.save-as-btn {
+  padding: 10px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.save-btn:hover,
+.save-as-btn:hover {
+  background: var(--accent-muted);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .send-btn {
   display: inline-flex;
   align-items: center;

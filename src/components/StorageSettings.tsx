@@ -1,7 +1,6 @@
 import { useState } from 'react';
+import { isTauri } from '../api';
 import './StorageSettings.css';
-
-const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
 
 async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   if (!isTauri) throw new Error('Tauri only');
@@ -11,7 +10,11 @@ async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T
 
 type Provider = 'local' | 'gdrive' | 's3';
 
-export function StorageSettings() {
+interface StorageSettingsProps {
+  onImportComplete?: () => void;
+}
+
+export function StorageSettings({ onImportComplete }: StorageSettingsProps) {
   const [provider, setProvider] = useState<Provider>('local');
   const [s3Bucket, setS3Bucket] = useState('');
   const [s3Region, setS3Region] = useState('us-east-1');
@@ -167,9 +170,10 @@ export function StorageSettings() {
             try {
               const result = await invoke<{ collections: number; requests: number }>(
                 'import_postman',
-                { json: text }
+                { json: text, append: true }
               );
               setSyncStatus(`Imported: ${result.collections} collections, ${result.requests} requests`);
+              onImportComplete?.();
             } catch (err) {
               setSyncStatus(`Import error: ${err}`);
             }

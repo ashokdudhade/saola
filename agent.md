@@ -56,16 +56,16 @@ Unlike competitors that force data into their own clouds, Saola ensures your API
 * [x] Global Search (`Cmd/Ctrl + P`) for requests and variables.
 * [x] Import/Export support for Postman v2.1 collections.
 
-### Phase 5: Collection & Folder Management *(Proposed — Pending Review)*
+### Phase 5: Collection & Folder Management ✅ *Complete*
 
 **Goal:** Enable users to create, organize, and persist API collections and folders. Wire `get_collections` to real storage instead of mock data.
 
 **Summary:** Local JSON persistence → 5 new Tauri commands (create_collection, create_folder, save_request, rename_item, delete_item) → Sidebar context menus + Save (Cmd+S) + empty state. Import Postman merges into storage. Reorder/drag-drop can be deferred.
 
 #### A. Persistence Layer
-* [ ] **Local storage for collections** — Store collections as JSON in app data dir (e.g. `~/.local/share/saola/collections.json` or `%APPDATA%/saola/collections.json`). Fallback: empty array if no file exists.
-* [ ] **Wire `get_collections`** — Read from local storage instead of hardcoded data.
-* [ ] **Integrate `import_postman`** — Merge imported collections into local storage (append or replace by user choice).
+* [x] **Local storage for collections** — Store collections as JSON in app data dir (e.g. `~/.local/share/saola/collections.json` or `%APPDATA%/saola/collections.json`). Fallback: empty array if no file exists.
+* [x] **Wire `get_collections`** — Read from local storage instead of hardcoded data.
+* [x] **Integrate `import_postman`** — Merge imported collections into local storage (append or replace by user choice).
 
 #### B. Rust Commands (Tauri)
 | Command | Purpose |
@@ -80,16 +80,16 @@ Unlike competitors that force data into their own clouds, Saola ensures your API
 #### C. UI Changes
 
 **Sidebar**
-* [ ] **"New Collection"** — Button or context menu in sidebar header. Prompts for name, calls `create_collection`, refreshes list.
-* [ ] **Context menu (right-click)** on collection: *New Folder*, *Rename*, *Delete*.
-* [ ] **Context menu** on folder: *New Folder*, *New Request*, *Rename*, *Delete*.
-* [ ] **Context menu** on request: *Rename*, *Delete*, *Duplicate*.
-* [ ] **Empty state** — When no collections: show "No collections yet" and a prominent "Create collection" CTA.
+* [x] **"New Collection"** — "+ New" button in header, "Create collection" in empty state, right-click context menu (on sidebar or collection). Uses official `isTauri` detection; `withGlobalTauri: true` in config.
+* [x] **Context menu (right-click)** on collection: *New Folder*, *New Request*, *Rename*, *Delete*.
+* [x] **Context menu** on folder: *New Folder*, *New Request*, *Rename*, *Delete*.
+* [x] **Context menu** on request: *Rename*, *Delete*, *Duplicate*.
+* [x] **Empty state** — When no collections: show "No collections yet" and a prominent "Create collection" CTA.
 
 **Request Builder / Tabs**
-* [ ] **"Save" / Cmd+S** — If current tab has no linked request: show "Save to collection" modal (choose collection/folder, optionally name). If linked: save in place. Call `save_request`.
-* [ ] **"Save as"** — Save current request as a new request in chosen location (duplicate with new id).
-* [ ] **Link tab to request** — When selecting a request from sidebar, tab is "linked" to that request id. Save updates that request.
+* [x] **"Save" / Cmd+S** — If current tab has no linked request: show "Save to collection" modal (choose collection/folder, optionally name). If linked: save in place. Call `save_request`.
+* [x] **"Save as"** — Save current request as a new request in chosen location (duplicate with new id).
+* [x] **Link tab to request** — When selecting a request from sidebar, tab is "linked" to that request id. Save updates that request.
 
 #### D. Data Model Notes
 * **IDs** — Generate UUIDs (or `col-{uuid}`, `fld-{uuid}`, `req-{uuid}`) for new items. Ensure uniqueness.
@@ -104,6 +104,30 @@ Unlike competitors that force data into their own clouds, Saola ensures your API
 * `Cmd+Shift+N` — *(Optional)* New collection quick-create.
 * Right-click — Context menu on all sidebar items.
 * Inline rename — *(Optional)* Double-click to rename; can use modal for v1.
+
+---
+
+### Phase 6: Environments & Variables ✅ *Complete*
+
+**Goal:** Support `{{variable}}` syntax across Params, Headers, and Body. Local environment management.
+
+| Task | Status |
+|------|--------|
+| Environment model (id, name, variables) | [x] |
+| Rust: get_environments, create/update/delete, set_active | [x] |
+| UI: Environment selector in settings panel | [x] |
+| Variable interpolation in send_request | [x] |
+| Add/Edit/Delete variables in env | [x] |
+
+---
+
+### Phase 7: Sync & Privacy UX
+
+| Task | Status |
+|------|--------|
+| Wire sync_push/sync_pull to collections JSON | [ ] |
+| Privacy indicator (sync destination status) | [ ] |
+| Export collections (JSON download) | [ ] |
 
 ---
 

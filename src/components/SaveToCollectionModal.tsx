@@ -13,6 +13,8 @@ interface SaveToCollectionModalProps {
   collections: Collection[];
   defaultName: string;
   onSave: (parentId: string, name: string) => void;
+  onSaveAs?: (parentId: string, name: string) => void;
+  saveAsMode?: boolean;
   onClose: () => void;
 }
 
@@ -38,6 +40,8 @@ export function SaveToCollectionModal({
   collections,
   defaultName,
   onSave,
+  onSaveAs,
+  saveAsMode = false,
   onClose,
 }: SaveToCollectionModalProps) {
   const [name, setName] = useState(defaultName);
@@ -47,17 +51,18 @@ export function SaveToCollectionModal({
 
   const targets = collectTargets(collections);
   const canSave = targets.length > 0 && parentId && name.trim();
+  const handleSaveClick = saveAsMode && onSaveAs ? onSaveAs : onSave;
 
   const handleSave = () => {
     if (!canSave) return;
-    onSave(parentId, name.trim());
+    handleSaveClick(parentId, name.trim());
     onClose();
   };
 
   return (
     <div className="save-modal-overlay" onClick={onClose}>
       <div className="save-modal" onClick={(e) => e.stopPropagation()}>
-        <h3>Save to Collection</h3>
+        <h3>{saveAsMode ? 'Save as' : 'Save to Collection'}</h3>
         {targets.length === 0 ? (
           <p className="save-modal-empty">Create a collection first from the sidebar.</p>
         ) : (
@@ -85,7 +90,7 @@ export function SaveToCollectionModal({
             Cancel
           </button>
           <button type="button" onClick={handleSave} disabled={!canSave}>
-            Save
+            {saveAsMode ? 'Save as' : 'Save'}
           </button>
         </div>
       </div>

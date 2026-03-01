@@ -1,6 +1,19 @@
-import type { Collection, CollectionItem, HttpResponse } from './types';
+import { isTauri as checkTauri } from '@tauri-apps/api/core';
+import type {
+  Collection,
+  CollectionItem,
+  Environment,
+  HttpResponse,
+} from './types';
 
-const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
+export const isTauri =
+  typeof window !== 'undefined' && (() => {
+    try {
+      return checkTauri();
+    } catch {
+      return false;
+    }
+  })();
 
 async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   if (!isTauri) throw new Error('Tauri only');
@@ -75,7 +88,7 @@ export async function createCollection(name: string): Promise<Collection> {
 }
 
 export async function createFolder(parentId: string, name: string): Promise<CollectionItem> {
-  return invoke<CollectionItem>('create_folder', { parent_id: parentId, name });
+  return invoke<CollectionItem>('create_folder', { parentId, name });
 }
 
 export async function saveRequest(
@@ -91,7 +104,7 @@ export async function saveRequest(
   }
 ): Promise<CollectionItem> {
   return invoke<CollectionItem>('save_request', {
-    parent_id: parentId,
+    parentId,
     request: {
       id: request.id || null,
       name: request.name,
@@ -105,9 +118,40 @@ export async function saveRequest(
 }
 
 export async function renameItem(id: string, newName: string): Promise<void> {
-  return invoke('rename_item', { id, new_name: newName });
+  return invoke('rename_item', { id, newName });
 }
 
 export async function deleteItem(id: string): Promise<void> {
   return invoke('delete_item', { id });
+}
+
+export async function getEnvironments(): Promise<Environment[]> {
+  if (isTauri) return invoke<Environment[]>('get_environments');
+  return [];
+}
+
+export async function getActiveEnvironment(): Promise<Environment | null> {
+  if (isTauri) return invoke<Environment | null>('get_active_environment');
+  return null;
+}
+
+export async function createEnvironment(name: string): Promise<Environment> {
+  return invoke<Environment>('create_environment', { name });
+}
+
+export async function updateEnvironment(
+  id: string,
+  payload: { name?: string; variables?: { key: string; value: string }[] }
+): Promise<Environment> {
+  return invoke<Environment>('update_environment', { id, payload });
+}
+
+export async function deleteEnvironment(id: string): Promise<void> {
+  return invoke('delete_environment', { id });
+}
+
+export async function setActiveEnvironment(
+  id: string | null
+): Promise<void> {
+  return invoke('set_active_environment', { id });
 }

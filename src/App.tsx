@@ -1,16 +1,15 @@
 import { useState, useCallback, useEffect } from 'react';
-import { sendRequest, getCollections, saveRequest } from './api';
+import { sendRequest, getCollections, saveRequest, isTauri } from './api';
 import { Sidebar } from './components/Sidebar';
 import { RequestTabs } from './components/RequestTabs';
 import { RequestBuilder } from './components/RequestBuilder';
 import { ResponseView } from './components/ResponseView';
 import { StorageSettings } from './components/StorageSettings';
+import { EnvironmentManager } from './components/EnvironmentManager';
 import { GlobalSearch } from './components/GlobalSearch';
 import { SaveToCollectionModal } from './components/SaveToCollectionModal';
-import type { Collection, HttpResponse, RequestTab, HeaderPair, ParamPair } from './types';
+import type { Collection, CollectionItem, HttpResponse, RequestTab, HeaderPair, ParamPair } from './types';
 import './App.css';
-
-const isTauri = typeof window !== 'undefined' && '__TAURI__' in window;
 
 interface TabData {
   method: string;
@@ -22,6 +21,29 @@ interface TabData {
 
 function generateId() {
   return `tab-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function findRequestName(collections: Collection[], requestId: string): string | null {
+  for (const col of collections) {
+    for (const item of col.children) {
+      if (item.type === 'request' && item.id === requestId) return item.name;
+      if (item.type === 'folder') {
+        const found = findRequestInItems(item.children, requestId);
+        if (found) return found;
+      }
+    }
+  }
+  return null;
+}
+function findRequestInItems(items: CollectionItem[], requestId: string): string | null {
+  for (const item of items) {
+    if (item.type === 'request' && item.id === requestId) return item.name;
+    if (item.type === 'folder') {
+      const found = findRequestInItems(item.children, requestId);
+      if (found) return found;
+    }
+  }
+  return null;
 }
 
 function App() {
@@ -37,6 +59,7 @@ function App() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [collectionsLoading, setCollectionsLoading] = useState(true);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [saveAsModalOpen, setSaveAsModalOpen] = useState(false);
   const [tabLinks, setTabLinks] = useState<Record<string, { requestId: string; parentId: string }>>({});
 
   const refreshCollections = useCallback(() => {
@@ -50,6 +73,21 @@ function App() {
   useEffect(() => {
     refreshCollections();
   }, [refreshCollections]);
+
+  useEffect(() => {
+    if (collections.length === 0) return;
+    setTabs((prev) =>
+      prev.map((tab) => {
+        const link = tabLinks[tab.id];
+        if (!link) return tab;
+        const name = findRequestName(collections, link.requestId);
+        if (name != null && name !== tab.name) {
+          return { ...tab, name };
+        }
+        return tab;
+      })
+    );
+  }, [collections, tabLinks]);
 
   const ensureTab = useCallback(() => {
     if (tabs.length === 0) {
@@ -215,6 +253,10 @@ function App() {
     }
   }, [activeTabId, tabData, tabLinks, tabs, refreshCollections]);
 
+  const handleSaveAs = useCallback(() => {
+    setSaveAsModalOpen(true);
+  }, []);
+
   const handleNewRequestInFolder = useCallback(
     async (parentId: string) => {
       if (!isTauri) return;
@@ -289,6 +331,29 @@ function App() {
     [activeTabId, tabData, refreshCollections]
   );
 
+  const handleSaveAsToLocation = useCallback(
+    async (parentId: string, name: string) => {
+      if (!activeTabId || !isTauri) return;
+      const data = tabData[activeTabId];
+      if (!data) return;
+      try {
+        await saveRequest(parentId, {
+          name,
+          method: data.method,
+          url: data.url,
+          params: data.params,
+          headers: data.headers,
+          body: data.body,
+        });
+        refreshCollections();
+        setSaveAsModalOpen(false);
+      } catch (err) {
+        alert(String(err));
+      }
+    },
+    [activeTabId, tabData, refreshCollections]
+  );
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
@@ -313,6 +378,7 @@ function App() {
   }, [handleSend, handleSave]);
 
   const activeData = activeTabId ? tabData[activeTabId] : null;
+  const isLinkedTab = activeTabId ? !!tabLinks[activeTabId] : false;
 
   const updateTabData = useCallback((updates: Partial<TabData>) => {
     if (!activeTabId) return;
@@ -366,7 +432,8 @@ function App() {
       />
       {settingsOpen && (
         <div className="settings-panel">
-          <StorageSettings />
+          <EnvironmentManager />
+          <StorageSettings onImportComplete={refreshCollections} />
         </div>
       )}
 
@@ -376,6 +443,16 @@ function App() {
         defaultName={tabs.find((t) => t.id === activeTabId)?.name ?? 'Request'}
         onSave={handleSaveToLocation}
         onClose={() => setSaveModalOpen(false)}
+      />
+
+      <SaveToCollectionModal
+        open={saveAsModalOpen}
+        collections={collections}
+        defaultName={tabs.find((t) => t.id === activeTabId)?.name ?? 'Request'}
+        onSave={() => {}}
+        onSaveAs={handleSaveAsToLocation}
+        saveAsMode
+        onClose={() => setSaveAsModalOpen(false)}
       />
 
       <div className="app-body">
@@ -411,6 +488,8 @@ function App() {
                   onBodyChange={(b) => updateTabData({ body: b })}
                   onSend={handleSend}
                   isLoading={loading}
+                  onSave={isTauri ? handleSave : undefined}
+                  onSaveAs={isTauri && isLinkedTab ? handleSaveAs : undefined}
                 />
                 <ResponseView response={response} isLoading={loading} error={error} />
               </>

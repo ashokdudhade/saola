@@ -59,3 +59,16 @@ pub struct HttpResponse {
     pub headers: Vec<HeaderPair>,
     pub body: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnvVariable {
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Environment {
+    pub id: String,
+    pub name: String,
+    pub variables: Vec<EnvVariable>,
+}

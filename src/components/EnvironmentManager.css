@@ -1,0 +1,184 @@
+.environment-manager {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.environment-manager h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.env-hint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.env-hint code {
+  background: var(--bg-elevated);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.env-list {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.env-select {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+
+.env-new-btn {
+  padding: 8px 16px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-md);
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.env-new-btn:hover {
+  background: var(--accent-hover);
+}
+
+.env-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.env-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+}
+
+.env-item-name {
+  flex: 1;
+}
+
+.env-item button {
+  padding: 4px 10px;
+  font-size: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.env-item button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.env-edit-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1002;
+}
+
+.env-edit-modal {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  min-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.env-edit-modal h4 {
+  margin: 0 0 16px;
+}
+
+.env-edit-modal label {
+  display: block;
+  margin: 12px 0 4px;
+  font-size: 13px;
+}
+
+.env-edit-modal input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+
+.env-var-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.env-var-row input {
+  flex: 1;
+}
+
+.env-var-row button {
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.env-add-var {
+  margin-top: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  background: var(--bg-elevated);
+  border: 1px dashed var(--border-default);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.env-add-var:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.env-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.env-edit-actions button {
+  padding: 8px 20px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+
+.env-edit-actions button:first-child {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+}
+
+.env-edit-actions button:last-child {
+  background: var(--accent);
+  border: none;
+  color: #000;
+}

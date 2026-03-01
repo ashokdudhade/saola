@@ -18,6 +18,8 @@ interface RequestBuilderProps {
   onBodyChange: (body: string | null) => void;
   onSend: () => void;
   isLoading?: boolean;
+  onSave?: () => void;
+  onSaveAs?: () => void;
 }
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
@@ -92,6 +94,8 @@ export function RequestBuilder({
   onBodyChange,
   onSend,
   isLoading = false,
+  onSave,
+  onSaveAs,
 }: RequestBuilderProps) {
   const [activeTab, setActiveTab] = useState<BuilderTab>('params');
 
@@ -123,6 +127,26 @@ export function RequestBuilder({
           value={url}
           onChange={(e) => onUrlChange(e.target.value)}
         />
+        {onSave && (
+          <button
+            type="button"
+            className="save-btn"
+            onClick={onSave}
+            title="Save (Ctrl+S)"
+          >
+            Save
+          </button>
+        )}
+        {onSaveAs && (
+          <button
+            type="button"
+            className="save-as-btn"
+            onClick={onSaveAs}
+            title="Save as (create new request)"
+          >
+            Save as
+          </button>
+        )}
         <button
           type="button"
           className="send-btn"

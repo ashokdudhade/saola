@@ -50,3 +50,14 @@ export interface RequestTab {
   method: string;
   url: string;
 }
+
+export interface EnvVariable {
+  key: string;
+  value: string;
+}
+
+export interface Environment {
+  id: string;
+  name: string;
+  variables: EnvVariable[];
+}

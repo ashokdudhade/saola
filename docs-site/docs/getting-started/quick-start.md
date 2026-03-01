@@ -35,6 +35,6 @@ You should see the response in the right panel with status, headers, and body.
 
 ## Next Steps
 
-- [UI Overview](/docs/getting-started/ui-overview) — Learn the layout and navigation.
-- [Collections](/docs/features/collections) — Organize requests with folders and context menus.
-- [Environments](/docs/features/environments) — Use variables for different environments.
+- [UI Overview](/getting-started/ui-overview) — Learn the layout and navigation.
+- [Collections](/features/collections) — Organize requests with folders and context menus.
+- [Environments](/features/environments) — Use variables for different environments.

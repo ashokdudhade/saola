@@ -15,7 +15,10 @@
     "build:windows": "npm run build && cross-env CI=false npx tauri build -b msi -b nsis",
     "build:linux": "npm run build && cross-env CI=false npx tauri build -b deb -b rpm",
     "build:macos": "npm run build && cross-env CI=false npx tauri build -b dmg -b app",
-    "test:desktop": "cd e2e-desktop && npm test"
+    "test:desktop": "cd e2e-desktop && npm test",
+    "docs:start": "cd docs-site && npm start",
+    "docs:build": "cd docs-site && npm run build",
+    "docs:serve": "cd docs-site && npm run serve"
   },
   "dependencies": {
     "@codemirror/lang-json": "^6.0.2",

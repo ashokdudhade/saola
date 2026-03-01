@@ -9,6 +9,7 @@ import { EnvironmentManager } from './components/EnvironmentManager';
 import { GlobalSearch } from './components/GlobalSearch';
 import { SaveToCollectionModal } from './components/SaveToCollectionModal';
 import { RequestLogsPanel, type RequestLogEntry } from './components/RequestLogsPanel';
+import { CodeSnippetModal } from './components/CodeSnippetModal';
 import type { Collection, CollectionItem, HttpResponse, RequestTab, HeaderPair, ParamPair } from './types';
 import './App.css';
 
@@ -65,6 +66,7 @@ function App() {
   const [storageProvider, setStorageProvider] = useState<string>('local');
   const [requestLogs, setRequestLogs] = useState<RequestLogEntry[]>([]);
   const [logsPanelOpen, setLogsPanelOpen] = useState(false);
+  const [codeSnippetOpen, setCodeSnippetOpen] = useState(false);
 
   const refreshCollections = useCallback(() => {
     setCollectionsLoading(true);
@@ -540,6 +542,12 @@ function App() {
         onClose={() => setSaveAsModalOpen(false)}
       />
 
+      <CodeSnippetModal
+        open={codeSnippetOpen}
+        request={activeData ? { method: activeData.method, url: activeData.url, params: activeData.params, headers: activeData.headers, body: activeData.body } : null}
+        onClose={() => setCodeSnippetOpen(false)}
+      />
+
       <div className="app-body">
         <Sidebar
           collections={collections}
@@ -575,6 +583,7 @@ function App() {
                   isLoading={loading}
                   onSave={isTauri ? handleSave : undefined}
                   onSaveAs={isTauri && isLinkedTab ? handleSaveAs : undefined}
+                  onCode={() => setCodeSnippetOpen(true)}
                 />
                 <ResponseView response={response} isLoading={loading} error={error} />
               </>

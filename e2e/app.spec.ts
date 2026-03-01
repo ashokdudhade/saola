@@ -54,4 +54,15 @@ test.describe('Saola Desktop App', () => {
     await page.click('.tab-new');
     await expect(page.locator('.request-tab')).toHaveCount(2);
   });
+
+  test('code snippet modal opens and shows snippet', async ({ page }) => {
+    await page.goto(BASE);
+    await expect(page.locator('.code-btn')).toBeVisible({ timeout: 5000 });
+    await page.locator('.url-input').fill('https://httpbin.org/get');
+    await page.locator('.code-btn').click();
+    await expect(page.locator('.code-snippet-modal')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('.code-snippet-output')).toContainText(/curl|fetch|requests/);
+    await page.locator('.code-snippet-modal button[aria-label="Close"]').click();
+    await expect(page.locator('.code-snippet-modal')).not.toBeVisible();
+  });
 });

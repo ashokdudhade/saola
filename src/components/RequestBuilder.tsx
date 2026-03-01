@@ -20,6 +20,7 @@ interface RequestBuilderProps {
   isLoading?: boolean;
   onSave?: () => void;
   onSaveAs?: () => void;
+  onCode?: () => void;
 }
 
 const METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
@@ -96,6 +97,7 @@ export function RequestBuilder({
   isLoading = false,
   onSave,
   onSaveAs,
+  onCode,
 }: RequestBuilderProps) {
   const [activeTab, setActiveTab] = useState<BuilderTab>('params');
 
@@ -145,6 +147,11 @@ export function RequestBuilder({
             title="Save as (create new request)"
           >
             Save as
+          </button>
+        )}
+        {onCode && (
+          <button type="button" className="code-btn" onClick={onCode} title="Generate code snippet" aria-label="Generate code snippet">
+            {'</>'}
           </button>
         )}
         <button

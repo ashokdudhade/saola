@@ -12,5 +12,10 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [{ name: 'firefox', use: { ...devices['Desktop Firefox'] } }],
-  webServer: undefined,
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:5173',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120000,
+  },
 });

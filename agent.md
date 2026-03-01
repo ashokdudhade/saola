@@ -174,6 +174,27 @@ Unlike competitors that force data into their own clouds, Saola ensures your API
 
 ---
 
+### Phase 10: Code Snippet Generation ✅ *Complete*
+
+**Goal:** Generate code snippets from any request configured in Saola, so users can copy ready-to-run code into their projects (similar to Postman's "Code" button).
+
+| Task | Status |
+|------|--------|
+| UI: "Code" button in Request Builder or Response area | [x] |
+| Language selector: cURL, JavaScript (fetch), Python (requests), etc. | [x] |
+| Generate snippet from current request (method, URL, headers, params, body) | [x] |
+| Apply variable interpolation (resolved values or `{{var}}` placeholders) | [x] |
+| Copy to clipboard | [x] |
+| *(Optional)* Additional languages: Go, Ruby, PHP, Java, Rust | [ ] |
+
+**Notes:**
+* Input: method, full URL (with params), headers, body — same data sent to `send_request`.
+* Support at minimum: **cURL**, **JavaScript fetch**, **Python requests**.
+* Use resolved URL/headers when environment is active; optionally offer "with placeholders" toggle.
+* Per UX guidelines: use `aria-label` for icon-only buttons.
+
+---
+
 ## 5. Developer UX Guidelines
 * **Zero Latency:** UI must remain responsive during large API response rendering. Use virtualization for long JSON bodies.
 * **Keyboard-Centric:** `Cmd+Enter` to send, `Cmd+S` to save to cloud, `Cmd+\` to toggle sidebar.

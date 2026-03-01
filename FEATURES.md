@@ -43,6 +43,7 @@ Use this document as a checklist when testing all core features of the desktop a
 | Auth tab | Placeholder (OAuth/S3 config in settings) | — |
 | Body tab | Edit JSON/text body for POST/PUT/PATCH | CodeMirror in Body |
 | Send button | Click or `Cmd/Ctrl+Enter` | `.send-btn` |
+| Code button | Generate code snippet (cURL, fetch, Python) | `.code-btn` |
 | Save button | Save linked request or open Save modal | — |
 | Save as button | Open Save modal to save as new request | — |
 
@@ -198,6 +199,7 @@ Use this document as a checklist when testing all core features of the desktop a
 | Method dropdown | Select POST |
 | Send request | Expect 2xx status badge |
 | Tabs | New tab creates second tab |
+| Code snippet | Click `.code-btn`; modal shows curl/fetch/requests; Copy works |
 
 **Manual testing** (native dialogs block automation):
 

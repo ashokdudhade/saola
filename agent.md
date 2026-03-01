@@ -195,6 +195,79 @@ Unlike competitors that force data into their own clouds, Saola ensures your API
 
 ---
 
+### Phase 11: Documentation Site ✅ *Planned*
+
+**Goal:** Create a documentation site using Docusaurus that documents all features and usage, grounded in the actual codebase. Users install from GitHub Releases.
+
+**Summary:** Docusaurus site in `docs-site/` (or `website/`) with hierarchical docs. Start with **Installation from GitHub Releases**, then Getting Started, feature guides, keyboard shortcuts, and reference. Use `FEATURES.md`, `agent.md`, and the codebase as factual sources. No fictional features—only what exists in the app.
+
+#### A. Tech Stack & Setup
+| Task | Status |
+|------|--------|
+| Initialize Docusaurus (e.g. `npx create-docusaurus@latest docs-site classic`) | [ ] |
+| Configure `docusaurus.config.js` (title: Saola, baseUrl, theme) | [ ] |
+| Add docs-only mode or docs as primary (routeBasePath) per use case | [ ] |
+| Set up sidebar in `sidebars.js` for hierarchical navigation | [ ] |
+
+#### B. Documentation Structure (Best Practices)
+* **Docs hierarchy:** `docs/` directory with folders per major topic.
+* **File naming:** Use lowercase, hyphenated (`installation.md`, `getting-started.md`, `collections.md`).
+* **Front matter:** Add `title`, `sidebar_position` for ordering.
+* **Table of contents:** h2/h3 in each doc; Docusaurus auto-generates TOC.
+
+**Proposed structure:**
+
+```
+docs/
+├── introduction.md          # What is Saola, privacy-first, data sovereignty
+├── installation.md          # Install from GitHub Releases (primary path)
+├── getting-started/
+│   ├── quick-start.md       # First collection, first request, first send
+│   └── ui-overview.md       # Sidebar, tabs, settings, global search
+├── features/
+│   ├── collections.md       # Create, folders, context menus, save/save-as
+│   ├── request-builder.md   # Method, URL, params, headers, body, send
+│   ├── environments.md      # Variables, {{var}}, interpolation
+│   ├── sync-and-storage.md  # Local, S3, G-Drive, export, encrypt
+│   ├── request-logs.md      # Call logs, verbose request/response view
+│   └── code-snippets.md     # Code button, cURL, fetch, Python, copy
+├── reference/
+│   ├── keyboard-shortcuts.md
+│   ├── postman-import.md    # Import Postman v2.1
+│   └── data-storage.md      # File locations (collections.json, etc.)
+└── troubleshooting.md
+```
+
+#### C. Content Requirements (Codebase-Factual)
+* **Installation:** Primary path is GitHub Releases (`https://github.com/<org>/saola/releases`). Document:
+  * Windows: `.msi` or `.exe` from release assets.
+  * macOS: `.dmg` (Intel + Apple Silicon).
+  * Linux: `.deb` (Debian/Ubuntu), `.rpm` (Fedora/RHEL).
+  * Commands: `sudo dpkg -i Saola_*_amd64.deb`, `sudo rpm -i Saola-*-1.x86_64.rpm`.
+* **Features:** Write only what exists. Reference `FEATURES.md` and components: `Sidebar`, `RequestBuilder`, `EnvironmentManager`, `StorageSettings`, `RequestLogsPanel`, `CodeSnippetModal`, `SaveToCollectionModal`, `GlobalSearch`.
+* **No placeholders:** Avoid "Coming soon" for unimplemented features. Omit or state "Not yet available" where appropriate.
+
+#### D. Best Practices for Tech Docs
+* **Task-oriented:** "How to create a collection" not "Collections exist."
+* **Screenshots/placeholders:** Add `<!-- TODO: screenshot -->` where visuals help; fill in later.
+* **Code blocks:** Use proper fences for CLI commands, JSON examples.
+* **Consistent terminology:** Use Postman mapping from Section 6 (Collection, Environment, etc.).
+* **Accessibility:** Alt text for images; semantic structure.
+
+#### E. Integration
+| Task | Status |
+|------|--------|
+| Add `docs:build` and `docs:start` scripts to root `package.json` (or docs-site) | [ ] |
+| Optional: GitHub Action to deploy docs to GitHub Pages on push to `main` | [ ] |
+| Optional: Link docs from repo README | [ ] |
+
+#### F. Verification
+* Docs build without errors: `npm run build` in docs-site.
+* All internal links resolve.
+* Installation section matches actual release assets from `.github/workflows/release.yml`.
+
+---
+
 ## 5. Developer UX Guidelines
 * **Zero Latency:** UI must remain responsive during large API response rendering. Use virtualization for long JSON bodies.
 * **Keyboard-Centric:** `Cmd+Enter` to send, `Cmd+S` to save to cloud, `Cmd+\` to toggle sidebar.

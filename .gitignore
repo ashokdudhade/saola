@@ -20,6 +20,9 @@ dist-ssr
 # Tauri
 src-tauri/target/
 
+# Build output (installable distributions)
+release/
+
 # E2E / Playwright
 e2e-desktop/test-results/
 e2e-desktop/playwright-report/

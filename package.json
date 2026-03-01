@@ -11,6 +11,10 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
+    "build:dist": "npm run build && cross-env CI=false npx tauri build",
+    "build:windows": "npm run build && cross-env CI=false npx tauri build -b msi -b nsis",
+    "build:linux": "npm run build && cross-env CI=false npx tauri build -b deb -b rpm",
+    "build:macos": "npm run build && cross-env CI=false npx tauri build -b dmg -b app",
     "test:desktop": "cd e2e-desktop && npm test"
   },
   "dependencies": {
@@ -30,6 +34,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
+    "cross-env": "^10.1.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",

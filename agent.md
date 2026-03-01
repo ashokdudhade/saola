@@ -195,7 +195,7 @@ Unlike competitors that force data into their own clouds, Saola ensures your API
 
 ---
 
-### Phase 11: Documentation Site ✅ *Planned*
+### Phase 11: Documentation Site ✅ *Complete*
 
 **Goal:** Create a documentation site using Docusaurus that documents all features and usage, grounded in the actual codebase. Users install from GitHub Releases.
 
@@ -204,10 +204,10 @@ Unlike competitors that force data into their own clouds, Saola ensures your API
 #### A. Tech Stack & Setup
 | Task | Status |
 |------|--------|
-| Initialize Docusaurus (e.g. `npx create-docusaurus@latest docs-site classic`) | [ ] |
-| Configure `docusaurus.config.js` (title: Saola, baseUrl, theme) | [ ] |
-| Add docs-only mode or docs as primary (routeBasePath) per use case | [ ] |
-| Set up sidebar in `sidebars.js` for hierarchical navigation | [ ] |
+| Initialize Docusaurus (e.g. `npx create-docusaurus@latest docs-site classic`) | [x] |
+| Configure `docusaurus.config.js` (title: Saola, baseUrl, theme) | [x] |
+| Add docs-only mode or docs as primary (routeBasePath) per use case | [x] |
+| Set up sidebar in `sidebars.js` for hierarchical navigation | [x] |
 
 #### B. Documentation Structure (Best Practices)
 * **Docs hierarchy:** `docs/` directory with folders per major topic.
@@ -257,8 +257,8 @@ docs/
 #### E. Integration
 | Task | Status |
 |------|--------|
-| Add `docs:build` and `docs:start` scripts to root `package.json` (or docs-site) | [ ] |
-| Optional: GitHub Action to deploy docs to GitHub Pages on push to `main` | [ ] |
+| Add `docs:build` and `docs:start` scripts to root `package.json` (or docs-site) | [x] |
+| Optional: GitHub Action to deploy docs to GitHub Pages on push to `main` | [x] |
 | Optional: Link docs from repo README | [ ] |
 
 #### F. Verification

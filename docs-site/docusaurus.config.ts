@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
-const ghOrg = process.env.GH_ORG || 'YOUR_ORG';
+const ghOrg = process.env.GH_ORG || 'ashokdudhade';
 const ghRepo = process.env.GH_REPO || 'saola';
 const ghBase = `https://github.com/${ghOrg}/${ghRepo}`;
 
@@ -19,10 +19,10 @@ const config: Config = {
   },
 
   // GitHub Pages: https://<org>.github.io/saola/ (CI sets these via env)
-  url: process.env.DEPLOYMENT_URL || 'https://YOUR_ORG.github.io',
+  url: process.env.DEPLOYMENT_URL || 'https://ashokdudhade.github.io',
   baseUrl: process.env.DEPLOYMENT_BASE_PATH || '/saola/',
 
-  organizationName: process.env.GH_ORG || 'YOUR_ORG',
+  organizationName: process.env.GH_ORG || 'ashokdudhade',
   projectName: process.env.GH_REPO || 'saola',
   trailingSlash: false,
 

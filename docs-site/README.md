@@ -1,41 +1,37 @@
-# Website
+# Saola Documentation
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
-
-## Installation
-
-```bash
-yarn
-```
+Docusaurus-based documentation for Saola. Content is derived from the codebase and `FEATURES.md`.
 
 ## Local Development
 
+From repo root:
+
 ```bash
-yarn start
+npm run docs:start
 ```
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+Or from this directory:
+
+```bash
+npm start
+```
 
 ## Build
 
 ```bash
-yarn build
+npm run docs:build   # from root
+# or
+npm run build       # from docs-site/
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+## Deploy to GitHub Pages
 
-## Deployment
+The `.github/workflows/deploy-docs.yml` workflow builds and deploys on push to `main`.
 
-Using SSH:
+**First-time setup:**
+1. Go to repo **Settings** → **Pages**
+2. Under "Build and deployment", set **Source** to **GitHub Actions**
 
-```bash
-USE_SSH=true yarn deploy
-```
+After the workflow runs, docs will be at `https://<org>.github.io/saola/`.
 
-Not using SSH:
-
-```bash
-GIT_USER=<Your GitHub username> yarn deploy
-```
-
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+**Config:** Uses `ashokdudhade` as default org. CI overrides via `GH_ORG` and `GH_REPO` env vars.

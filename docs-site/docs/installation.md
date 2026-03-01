@@ -5,7 +5,7 @@ title: Installation
 
 # Installation
 
-Saola is distributed via [GitHub Releases](https://github.com/YOUR_ORG/saola/releases). Replace `YOUR_ORG` with your GitHub org or username. Download the installer for your platform from the latest release.
+Saola is distributed via [GitHub Releases](https://github.com/ashokdudhade/saola/releases). Download the installer for your platform from the latest release.
 
 ## Windows
 

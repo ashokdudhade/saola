@@ -62,6 +62,6 @@ jobs:
             - **macOS:** Open the `.dmg` and drag Saola to Applications
             - **Linux (deb):** `sudo dpkg -i Saola_*_amd64.deb`
             - **Linux (rpm):** `sudo rpm -i Saola-*-1.x86_64.rpm`
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}

@@ -121,13 +121,56 @@ Unlike competitors that force data into their own clouds, Saola ensures your API
 
 ---
 
-### Phase 7: Sync & Privacy UX
+### Phase 7: Sync & Privacy UX ✅ *Complete*
 
 | Task | Status |
 |------|--------|
-| Wire sync_push/sync_pull to collections JSON | [ ] |
-| Privacy indicator (sync destination status) | [ ] |
-| Export collections (JSON download) | [ ] |
+| Wire sync_push/sync_pull to collections JSON | [x] |
+| Privacy indicator (sync destination status) | [x] |
+| Export collections (JSON download) | [x] |
+
+---
+
+### Phase 8: Sidebar Visual Hierarchy
+
+**Goal:** Improve sidebar display so collections, folders, and requests read as a clear hierarchy and feel like they belong together (Postman/Insomnia-style tree).
+
+| Task | Status |
+|------|--------|
+| Indentation for hierarchy | [x] |
+| Connector lines (tree lines) between parent and children | [x] |
+| Visual distinction: collection vs folder vs request (icons or styling) | [x] |
+| Consistent padding/depth per level (e.g. 12–16px per indent) | [x] |
+| Expand/collapse for collections and folders | [x] |
+| Hover states that reinforce grouping | [x] |
+
+**Notes:**
+* Use `paddingLeft` or `marginLeft` based on `depth` for indentation.
+* Consider folder/request icons (▸ for collapsed, ▾ for expanded; document for request).
+* Tree connectors (vertical/horizontal lines) clarify parent-child; optional but improves scannability.
+* Per `agent-ux.md`: use design tokens, maintain contrast, follow icon-vs-text guidelines.
+
+---
+
+### Phase 9: Request Call Logs (Verbose View) ✅ *Complete*
+
+**Goal:** Provide a way to view logs for each request call, with a verbose view of both the outgoing request and the incoming response (similar to Postman Console / browser DevTools Network).
+
+| Task | Status |
+|------|--------|
+| Store per-call logs (request id, timestamp, request + response data) | [x] |
+| UI: Log viewer/console panel (dockable or bottom drawer) | [x] |
+| Verbose request view: method, full URL, headers, body, timing | [x] |
+| Verbose response view: status, headers, body, size, duration | [x] |
+| List of recent calls (chronological) with filter by request | [x] |
+| Expand/collapse or tabs for Request vs Response sections | [x] |
+| Copy to clipboard for request/response raw data | [x] |
+| *(Optional)* Persist logs to disk (ring buffer) for session recall | [ ] |
+
+**Notes:**
+* Captured on each `send_request`: pre-send snapshot (method, resolved URL after interpolation, final headers, body) + post-response (status, headers, body, elapsed ms).
+* Use virtualization for long log lists; truncate or lazy-load very large bodies.
+* Per Developer UX Guidelines: color status codes (200=green, 4xx=orange, 5xx=red).
 
 ---
 

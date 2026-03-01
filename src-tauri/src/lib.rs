@@ -35,6 +35,8 @@ pub fn run() {
             commands::delete_environment,
             commands::set_active_environment,
             commands::configure_s3,
+            commands::get_storage_provider,
+            commands::set_storage_provider,
             commands::sync_push,
             commands::sync_pull,
             commands::encrypt_collections,

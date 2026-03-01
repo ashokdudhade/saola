@@ -14,7 +14,8 @@ import './EnvironmentManager.css';
 export function EnvironmentManager() {
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [editing, setEditing] = useState<Environment | null>(null);
+  const [modalEnv, setModalEnv] = useState<Environment | { name: string; variables: EnvVariable[] } | null>(null);
+  const [isCreate, setIsCreate] = useState(false);
 
   const load = useCallback(async () => {
     if (!isTauri) return;
@@ -34,12 +35,38 @@ export function EnvironmentManager() {
     load();
   }, [load]);
 
-  const handleCreate = async () => {
-    if (!isTauri) return;
-    const name = window.prompt('Environment name', 'New Environment');
-    if (!name?.trim()) return;
+  const openCreate = () => {
+    setIsCreate(true);
+    setModalEnv({ name: 'New Environment', variables: [{ key: '', value: '' }] });
+  };
+
+  const openEdit = (env: Environment) => {
+    setIsCreate(false);
+    setModalEnv({ ...env, variables: env.variables?.length ? [...env.variables] : [{ key: '', value: '' }] });
+  };
+
+  const closeModal = () => {
+    setModalEnv(null);
+    setIsCreate(false);
+  };
+
+  const handleSave = async () => {
+    if (!modalEnv || !isTauri) return;
+    const vars = modalEnv.variables.filter((v) => v.key.trim());
+    if (!modalEnv.name.trim()) return;
     try {
-      await createEnvironment(name.trim());
+      if (isCreate) {
+        const created = await createEnvironment(modalEnv.name.trim());
+        if (vars.length > 0) {
+          await updateEnvironment(created.id, { variables: vars });
+        }
+      } else {
+        await updateEnvironment((modalEnv as Environment).id, {
+          name: modalEnv.name.trim(),
+          variables: vars,
+        });
+      }
+      closeModal();
       load();
     } catch (e) {
       alert(String(e));
@@ -56,31 +83,13 @@ export function EnvironmentManager() {
     }
   };
 
-  const handleEdit = (env: Environment) => {
-    setEditing(env);
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editing || !isTauri) return;
-    try {
-      await updateEnvironment(editing.id, {
-        name: editing.name,
-        variables: editing.variables,
-      });
-      setEditing(null);
-      load();
-    } catch (e) {
-      alert(String(e));
-    }
-  };
-
   const handleDelete = async (id: string) => {
     if (!isTauri) return;
-    if (!window.confirm('Delete this environment?')) return;
+    if (!window.confirm('Delete this environment? Variables will no longer be available.')) return;
     try {
       await deleteEnvironment(id);
       if (activeId === id) setActiveId(null);
-      setEditing(null);
+      if (modalEnv && (modalEnv as Environment).id === id) closeModal();
       load();
     } catch (e) {
       alert(String(e));
@@ -88,27 +97,35 @@ export function EnvironmentManager() {
   };
 
   const addVariable = () => {
-    if (!editing) return;
-    setEditing({
-      ...editing,
-      variables: [...editing.variables, { key: '', value: '' }],
+    if (!modalEnv) return;
+    setModalEnv({
+      ...modalEnv,
+      variables: [...modalEnv.variables, { key: '', value: '' }],
     });
   };
 
   const updateVariable = (idx: number, kv: Partial<EnvVariable>) => {
-    if (!editing) return;
-    const vars = [...editing.variables];
+    if (!modalEnv) return;
+    const vars = [...modalEnv.variables];
     vars[idx] = { ...vars[idx], ...kv };
-    setEditing({ ...editing, variables: vars });
+    setModalEnv({ ...modalEnv, variables: vars });
   };
 
   const removeVariable = (idx: number) => {
-    if (!editing) return;
-    setEditing({
-      ...editing,
-      variables: editing.variables.filter((_, i) => i !== idx),
+    if (!modalEnv) return;
+    setModalEnv({
+      ...modalEnv,
+      variables: modalEnv.variables.filter((_, i) => i !== idx),
     });
   };
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeModal();
+    };
+    if (modalEnv) window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [modalEnv]);
 
   if (!isTauri) return null;
 
@@ -116,76 +133,147 @@ export function EnvironmentManager() {
     <div className="environment-manager">
       <h3>Environments</h3>
       <p className="env-hint">
-        Use <code>{'{{variable}}'}</code> in URL, headers, or body to substitute values.
+        Use <code>{'{{variable}}'}</code> in URL, headers, or body. Select an environment to apply its variables.
       </p>
-      <div className="env-list">
-        <select
-          value={activeId ?? ''}
-          onChange={(e) => handleSetActive(e.target.value || null)}
-          className="env-select"
-        >
-          <option value="">No environment</option>
-          {environments.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.name}
-            </option>
-          ))}
-        </select>
-        <button type="button" className="env-new-btn" onClick={handleCreate}>
-          New
-        </button>
+
+      <div className="env-select-row">
+        <label htmlFor="env-active" className="env-select-label">Active environment</label>
+        <div className="env-select-wrap">
+          <select
+            id="env-active"
+            value={activeId ?? ''}
+            onChange={(e) => handleSetActive(e.target.value || null)}
+            className="env-select"
+            aria-label="Active environment"
+          >
+            <option value="">None</option>
+            {environments.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.name}
+              </option>
+            ))}
+          </select>
+          <button type="button" className="env-new-btn" onClick={openCreate} aria-label="Create environment">
+            New environment
+          </button>
+        </div>
       </div>
-      <div className="env-items">
-        {environments.map((env) => (
-          <div key={env.id} className="env-item">
-            <span className="env-item-name">{env.name}</span>
-            <button type="button" onClick={() => handleEdit(env)}>
-              Edit
-            </button>
-            {env.id !== activeId && (
-              <button type="button" onClick={() => handleDelete(env.id)}>
-                Delete
+
+      {environments.length === 0 ? (
+        <div className="env-empty">
+          <p>No environments yet.</p>
+          <p className="env-empty-hint">Create one to use variables like <code>{'{{baseUrl}}'}</code> in your requests.</p>
+          <button type="button" className="env-empty-btn" onClick={openCreate}>
+            Create environment
+          </button>
+        </div>
+      ) : (
+        <ul className="env-list" role="list">
+          {environments.map((env) => (
+            <li key={env.id} className={`env-item ${env.id === activeId ? 'env-item-active' : ''}`}>
+              <button
+                type="button"
+                className="env-item-main"
+                onClick={() => handleSetActive(env.id)}
+                title={env.id === activeId ? 'Active' : 'Set as active'}
+              >
+                <span className="env-item-name">{env.name}</span>
+                <span className="env-item-meta">
+                  {env.variables?.filter((v) => v.key?.trim()).length ?? 0} variables
+                  {env.id === activeId && <span className="env-item-badge">Active</span>}
+                </span>
               </button>
-            )}
-          </div>
-        ))}
-      </div>
-      {editing && (
-        <div className="env-edit-overlay" onClick={() => setEditing(null)}>
+              <div className="env-item-actions">
+                <button
+                  type="button"
+                  className="env-item-btn env-item-edit"
+                  onClick={() => openEdit(env)}
+                  aria-label={`Edit ${env.name}`}
+                >
+                  Edit
+                </button>
+                {env.id !== activeId ? (
+                  <button
+                    type="button"
+                    className="env-item-btn env-item-delete"
+                    onClick={() => handleDelete(env.id)}
+                    aria-label={`Delete ${env.name}`}
+                  >
+                    Delete
+                  </button>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {modalEnv && (
+        <div className="env-edit-overlay" onClick={closeModal}>
           <div className="env-edit-modal" onClick={(e) => e.stopPropagation()}>
-            <h4>Edit: {editing.name}</h4>
-            <label>Name</label>
+            <h4>{isCreate ? 'New environment' : 'Edit environment'}</h4>
+
+            <label htmlFor="env-modal-name">Name</label>
             <input
-              value={editing.name}
-              onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+              id="env-modal-name"
+              type="text"
+              value={modalEnv.name}
+              onChange={(e) => setModalEnv({ ...modalEnv, name: e.target.value })}
+              placeholder="e.g. Development"
+              autoFocus
             />
-            <label>Variables</label>
-            {editing.variables.map((v, i) => (
-              <div key={i} className="env-var-row">
-                <input
-                  placeholder="key"
-                  value={v.key}
-                  onChange={(e) => updateVariable(i, { key: e.target.value })}
-                />
-                <input
-                  placeholder="value"
-                  value={v.value}
-                  onChange={(e) => updateVariable(i, { value: e.target.value })}
-                />
-                <button type="button" onClick={() => removeVariable(i)}>
-                  ×
+
+            <div className="env-var-section">
+              <div className="env-var-header">
+                <label>Variables</label>
+                <button type="button" className="env-add-var" onClick={addVariable}>
+                  + Add variable
                 </button>
               </div>
-            ))}
-            <button type="button" onClick={addVariable} className="env-add-var">
-              + Add variable
-            </button>
+              <div className="env-var-table">
+                <div className="env-var-row env-var-header-row">
+                  <span className="env-var-col-key">Variable</span>
+                  <span className="env-var-col-value">Value</span>
+                  <span className="env-var-col-action" aria-hidden="true" />
+                </div>
+                {modalEnv.variables.map((v, i) => (
+                  <div key={i} className="env-var-row">
+                    <input
+                      className="env-var-input-key"
+                      placeholder="e.g. baseUrl"
+                      value={v.key}
+                      onChange={(e) => updateVariable(i, { key: e.target.value })}
+                    />
+                    <input
+                      className="env-var-input-value"
+                      placeholder="e.g. https://api.example.com"
+                      value={v.value}
+                      onChange={(e) => updateVariable(i, { value: e.target.value })}
+                    />
+                    <button
+                      type="button"
+                      className="env-var-remove"
+                      onClick={() => removeVariable(i)}
+                      aria-label="Remove variable"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="env-edit-actions">
-              <button type="button" onClick={() => setEditing(null)}>
+              <button type="button" onClick={closeModal}>
                 Cancel
               </button>
-              <button type="button" onClick={handleSaveEdit}>
-                Save
+              <button
+                type="button"
+                className="env-save-btn"
+                onClick={handleSave}
+                disabled={!modalEnv.name.trim()}
+              >
+                {isCreate ? 'Create' : 'Save'}
               </button>
             </div>
           </div>

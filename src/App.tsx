@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { sendRequest, getCollections, saveRequest, isTauri } from './api';
+import { sendRequest, getCollections, saveRequest, isTauri, getStorageProvider } from './api';
 import { Sidebar } from './components/Sidebar';
 import { RequestTabs } from './components/RequestTabs';
 import { RequestBuilder } from './components/RequestBuilder';
@@ -8,6 +8,7 @@ import { StorageSettings } from './components/StorageSettings';
 import { EnvironmentManager } from './components/EnvironmentManager';
 import { GlobalSearch } from './components/GlobalSearch';
 import { SaveToCollectionModal } from './components/SaveToCollectionModal';
+import { RequestLogsPanel, type RequestLogEntry } from './components/RequestLogsPanel';
 import type { Collection, CollectionItem, HttpResponse, RequestTab, HeaderPair, ParamPair } from './types';
 import './App.css';
 
@@ -61,6 +62,9 @@ function App() {
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [saveAsModalOpen, setSaveAsModalOpen] = useState(false);
   const [tabLinks, setTabLinks] = useState<Record<string, { requestId: string; parentId: string }>>({});
+  const [storageProvider, setStorageProvider] = useState<string>('local');
+  const [requestLogs, setRequestLogs] = useState<RequestLogEntry[]>([]);
+  const [logsPanelOpen, setLogsPanelOpen] = useState(false);
 
   const refreshCollections = useCallback(() => {
     setCollectionsLoading(true);
@@ -69,6 +73,23 @@ function App() {
       .catch(console.error)
       .finally(() => setCollectionsLoading(false));
   }, []);
+
+  useEffect(() => {
+    document.title = 'Saola';
+    if (isTauri) {
+      import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+        getCurrentWindow().setTitle('Saola');
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isTauri) {
+      getStorageProvider()
+        .then((s) => setStorageProvider(s.provider))
+        .catch(() => {});
+    }
+  }, [settingsOpen]);
 
   useEffect(() => {
     refreshCollections();
@@ -200,33 +221,75 @@ function App() {
     const data = tabData[activeTabId];
     if (!data) return;
 
-    setLoading(true);
-    setResponse(null);
-    setError(null);
-
-    try {
-      const buildUrl = () => {
-        const enabled = data.params.filter((p) => p.enabled && p.key.trim());
-        if (enabled.length === 0) return data.url;
+    const buildUrl = () => {
+      const enabled = data.params.filter((p) => p.enabled && p.key.trim());
+      if (enabled.length === 0) return data.url;
+      try {
         const u = new URL(data.url);
         enabled.forEach((p) => u.searchParams.set(p.key, p.value));
         return u.toString();
-      };
+      } catch {
+        return data.url;
+      }
+    };
+    const url = buildUrl();
+    const headers = data.headers.filter((h) => h.enabled && h.key.trim());
+    const body = ['POST', 'PUT', 'PATCH'].includes(data.method) ? data.body : null;
 
+    setLoading(true);
+    setResponse(null);
+    setError(null);
+    const start = performance.now();
+    const logId = `log-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+    try {
       const res = await sendRequest({
         method: data.method,
-        url: buildUrl(),
-        headers: data.headers.filter((h) => h.enabled && h.key.trim()),
+        url,
+        headers,
         params: data.params,
-        body: ['POST', 'PUT', 'PATCH'].includes(data.method) ? data.body : null,
+        body,
       });
+      const durationMs = Math.round(performance.now() - start);
       setResponse(res);
+      setRequestLogs((prev) => [
+        ...prev,
+        {
+          id: logId,
+          timestamp: Date.now(),
+          requestName: tabs.find((t) => t.id === activeTabId)?.name ?? 'Request',
+          method: data.method,
+          url,
+          headers,
+          body,
+          status: res.status,
+          statusText: res.statusText,
+          responseHeaders: res.headers,
+          responseBody: res.body,
+          durationMs,
+        },
+      ]);
     } catch (err) {
+      const durationMs = Math.round(performance.now() - start);
       setError(String(err));
+      setRequestLogs((prev) => [
+        ...prev,
+        {
+          id: logId,
+          timestamp: Date.now(),
+          requestName: tabs.find((t) => t.id === activeTabId)?.name ?? 'Request',
+          method: data.method,
+          url,
+          headers,
+          body,
+          durationMs,
+          error: String(err),
+        },
+      ]);
     } finally {
       setLoading(false);
     }
-  }, [activeTabId, tabData]);
+  }, [activeTabId, tabData, tabs]);
 
   const handleSave = useCallback(async () => {
     if (!activeTabId || !isTauri) return;
@@ -410,22 +473,41 @@ function App() {
           className="sidebar-toggle"
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
           title={sidebarCollapsed ? 'Show sidebar (Ctrl+\\)' : 'Hide sidebar (Ctrl+\\)'}
+          aria-label={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
         >
           {sidebarCollapsed ? '☰' : '✕'}
         </button>
         <h1 className="app-title">Saola</h1>
-        <span className="privacy-indicator" title="Sync destination: Local storage">
-          ● Local
+        <span
+          className="privacy-indicator"
+          title={`Sync destination: ${storageProvider === 's3' ? 'AWS S3' : storageProvider === 'gdrive' ? 'Google Drive' : 'Local storage'}`}
+        >
+          {storageProvider === 's3' ? 'S3' : storageProvider === 'gdrive' ? 'G-Drive' : 'Local'}
         </span>
+        <button
+          type="button"
+          className={`logs-btn ${logsPanelOpen ? 'active' : ''}`}
+          onClick={() => setLogsPanelOpen(!logsPanelOpen)}
+          title="Request logs"
+          aria-label="Toggle request logs"
+        >
+          📋
+        </button>
         <button
           type="button"
           className="settings-btn"
           onClick={() => setSettingsOpen(!settingsOpen)}
           title="Storage settings"
+          aria-label="Storage settings"
         >
           ⚙
         </button>
       </header>
+      <RequestLogsPanel
+        logs={requestLogs}
+        open={logsPanelOpen}
+        onClose={() => setLogsPanelOpen(false)}
+      />
       <GlobalSearch
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
@@ -433,7 +515,10 @@ function App() {
       {settingsOpen && (
         <div className="settings-panel">
           <EnvironmentManager />
-          <StorageSettings onImportComplete={refreshCollections} />
+          <StorageSettings
+            onImportComplete={refreshCollections}
+            onProviderChange={setStorageProvider}
+          />
         </div>
       )}
 

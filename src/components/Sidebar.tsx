@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   createCollection,
   createFolder,
@@ -9,6 +9,8 @@ import {
 } from '../api';
 import type { Collection, CollectionItem } from '../types';
 import './Sidebar.css';
+
+const INDENT_PER_LEVEL = 16;
 
 interface SidebarProps {
   collections: Collection[];
@@ -53,6 +55,8 @@ function CollectionNode({
   onSelectRequest,
   onContextMenu,
   depth,
+  expandedIds,
+  onToggleExpand,
 }: {
   item: CollectionItem;
   parentId: string;
@@ -66,35 +70,60 @@ function CollectionNode({
     requestData?: ContextMenu['requestData']
   ) => void;
   depth: number;
+  expandedIds: Set<string>;
+  onToggleExpand: (id: string) => void;
 }) {
   if (item.type === 'folder') {
+    const expanded = expandedIds.has(item.id);
+    const hasChildren = item.children.length > 0;
     return (
       <div
         className="collection-folder"
-        style={{ paddingLeft: depth * 12 }}
         onContextMenu={(e) => onContextMenu(e, 'folder', item.id, item.name)}
       >
-        <span className="folder-icon">▸</span>
-        <span>{item.name}</span>
-        <div>
-          {item.children.map((child) => (
-            <CollectionNode
-              key={child.id}
-              item={child}
-              parentId={item.id}
-              onSelectRequest={onSelectRequest}
-              onContextMenu={onContextMenu}
-              depth={depth + 1}
-            />
-          ))}
+        <div
+          className={`collection-folder-row ${!hasChildren ? 'no-children' : ''}`}
+          style={{ paddingLeft: depth * INDENT_PER_LEVEL }}
+          role={hasChildren ? 'button' : undefined}
+          tabIndex={hasChildren ? 0 : undefined}
+          onClick={() => hasChildren && onToggleExpand(item.id)}
+          onKeyDown={hasChildren ? (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onToggleExpand(item.id);
+            }
+          } : undefined}
+          aria-expanded={hasChildren ? expanded : undefined}
+        >
+          <span className={`tree-chevron ${expanded ? 'expanded' : ''} ${!hasChildren ? 'empty' : ''}`} aria-hidden>
+            {hasChildren ? (expanded ? '▾' : '▸') : '○'}
+          </span>
+          <span className="folder-icon" aria-hidden>📁</span>
+          <span className="folder-name">{item.name}</span>
         </div>
+        {expanded && (
+          <div className="collection-folder-children">
+            {item.children.map((child) => (
+              <CollectionNode
+                key={child.id}
+                item={child}
+                parentId={item.id}
+                onSelectRequest={onSelectRequest}
+                onContextMenu={onContextMenu}
+                depth={depth + 1}
+                expandedIds={expandedIds}
+                onToggleExpand={onToggleExpand}
+              />
+            ))}
+          </div>
+        )}
       </div>
     );
   }
   return (
     <div
       className="collection-request"
-      style={{ paddingLeft: depth * 12 }}
+      style={{ paddingLeft: depth * INDENT_PER_LEVEL }}
       onClick={() =>
         onSelectRequest({
           id: item.id,
@@ -117,10 +146,11 @@ function CollectionNode({
         })
       }
     >
+      <span className="request-icon" aria-hidden>📄</span>
       <span className={`method-badge method-${(item.method || 'get').toLowerCase()}`}>
         {item.method}
       </span>
-      <span>{item.name}</span>
+      <span className="request-name">{item.name}</span>
     </div>
   );
 }
@@ -135,6 +165,51 @@ export function Sidebar({
 }: SidebarProps) {
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const [renameTarget, setRenameTarget] = useState<{ id: string; current: string } | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
+    const ids = new Set<string>();
+    collections.forEach((c) => ids.add(c.id));
+    return ids;
+  });
+
+  const collectionIds = useMemo(() => collections.map((c) => c.id).join(','), [collections]);
+  useEffect(() => {
+    const collectExpandableIds = (items: CollectionItem[]): string[] => {
+      const ids: string[] = [];
+      for (const it of items) {
+        if (it.type === 'folder') {
+          ids.push(it.id);
+          ids.push(...collectExpandableIds(it.children));
+        }
+      }
+      return ids;
+    };
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      let changed = false;
+      collections.forEach((c) => {
+        if (!next.has(c.id)) {
+          next.add(c.id);
+          changed = true;
+        }
+        collectExpandableIds(c.children).forEach((id) => {
+          if (!next.has(id)) {
+            next.add(id);
+            changed = true;
+          }
+        });
+      });
+      return changed ? next : prev;
+    });
+  }, [collectionIds]);
+
+  const toggleExpand = useCallback((id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     const closeMenu = () => setContextMenu(null);
@@ -314,25 +389,53 @@ export function Sidebar({
             )}
           </div>
         ) : (
-          collections.map((col) => (
-            <div
-              key={col.id}
-              className="collection"
-              onContextMenu={(e) => handleContextMenu(e, 'collection', col.id, col.name)}
-            >
-              <div className="collection-name">{col.name}</div>
-              {col.children.map((item) => (
-                <CollectionNode
-                  key={item.id}
-                  item={item}
-                  parentId={col.id}
-                  onSelectRequest={onSelectRequest}
-                  onContextMenu={handleContextMenu}
-                  depth={0}
-                />
-              ))}
-            </div>
-          ))
+          collections.map((col) => {
+            const colExpanded = expandedIds.has(col.id);
+            const hasChildren = col.children.length > 0;
+            return (
+              <div
+                key={col.id}
+                className="collection"
+                onContextMenu={(e) => handleContextMenu(e, 'collection', col.id, col.name)}
+              >
+                <div
+                  className={`collection-header ${!hasChildren ? 'no-children' : ''}`}
+                  role={hasChildren ? 'button' : undefined}
+                  tabIndex={hasChildren ? 0 : undefined}
+                  onClick={() => hasChildren && toggleExpand(col.id)}
+                  onKeyDown={hasChildren ? (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggleExpand(col.id);
+                    }
+                  } : undefined}
+                  aria-expanded={hasChildren ? colExpanded : undefined}
+                >
+                  <span className={`tree-chevron collection-chevron ${colExpanded ? 'expanded' : ''}`} aria-hidden>
+                    {hasChildren ? (colExpanded ? '▾' : '▸') : '○'}
+                  </span>
+                  <span className="collection-icon" aria-hidden>📂</span>
+                  <span className="collection-name">{col.name}</span>
+                </div>
+                {colExpanded && (
+                  <div className="collection-children">
+                    {col.children.map((item) => (
+                      <CollectionNode
+                        key={item.id}
+                        item={item}
+                        parentId={col.id}
+                        onSelectRequest={onSelectRequest}
+                        onContextMenu={handleContextMenu}
+                        depth={0}
+                        expandedIds={expandedIds}
+                        onToggleExpand={toggleExpand}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
 

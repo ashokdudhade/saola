@@ -1,0 +1,29 @@
+---
+description: UX decisions — color themes, icon vs text, usability. Apply when editing UI.
+globs: "**/*.css,**/*.tsx,src/index.css"
+alwaysApply: false
+---
+
+# UX Guidelines (agent-ux.md)
+
+When changing colors, layout, or controls, follow `agent-ux.md`. Key rules:
+
+## Color
+- Use CSS variables (`var(--bg-primary)`, `var(--accent)`) — never hardcode hex
+- Status: 2xx green, 3xx blue, 4xx orange, 5xx red
+- Maintain contrast for text on backgrounds
+
+## Icon vs Text
+- **Icon:** Universal actions (Send, Save, Settings, Close), space-constrained (tab close, +)
+- **Text:** Primary/rare actions ("Create collection", "Save as"), when icon is ambiguous
+- **Icon + tooltip:** Secondary actions; add `aria-label` for icon-only buttons
+
+## Usability
+- Hover/focus states on all clickables
+- Loading feedback for async actions
+- Visible labels on form inputs
+- Logical keyboard tab order; Escape closes modals
+
+## Consistency
+- Use `--radius-sm/md/lg`, `--transition-fast/base`
+- Match existing button/modal styles in the codebase

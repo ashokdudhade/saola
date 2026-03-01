@@ -34,7 +34,7 @@ export function RequestTabs({ tabs, activeId, onSelect, onClose, onNew }: Reques
         </div>
       ))}
       {onNew && (
-        <button type="button" className="tab-new" onClick={onNew} title="New request">
+        <button type="button" className="tab-new" onClick={onNew} title="New request" aria-label="New request">
           +
         </button>
       )}

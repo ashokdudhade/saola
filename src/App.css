@@ -58,6 +58,21 @@
   font-size: 8px;
 }
 
+.logs-btn {
+  padding: 8px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+.logs-btn:hover,
+.logs-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .settings-btn {
   padding: 8px 12px;
   background: var(--bg-elevated);
@@ -116,7 +131,7 @@
   background: var(--accent);
   border: none;
   border-radius: var(--radius-md);
-  color: #000;
+  color: var(--text-on-accent);
   font-weight: 700;
 }
 

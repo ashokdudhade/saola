@@ -155,3 +155,19 @@ export async function setActiveEnvironment(
 ): Promise<void> {
   return invoke('set_active_environment', { id });
 }
+
+export interface StorageProviderStatus {
+  provider: string;
+  s3Configured: boolean;
+}
+
+export async function getStorageProvider(): Promise<StorageProviderStatus> {
+  if (!isTauri) return { provider: 'local', s3Configured: false };
+  const raw = await invoke<{ provider: string; s3_configured: boolean }>('get_storage_provider');
+  return { provider: raw.provider, s3Configured: raw.s3_configured };
+}
+
+export async function setStorageProvider(provider: string): Promise<void> {
+  if (!isTauri) return;
+  return invoke('set_storage_provider', { provider });
+}

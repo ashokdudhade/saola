@@ -29,6 +29,19 @@
   --status-redirect: #3b82f6;
   --status-client-error: #f97316;
   --status-server-error: #ef4444;
+  --status-success-bg: rgba(34, 197, 94, 0.2);
+  --status-redirect-bg: rgba(59, 130, 246, 0.2);
+  --status-client-error-bg: rgba(249, 115, 22, 0.2);
+  --status-server-error-bg: rgba(239, 68, 68, 0.2);
+  --status-server-error-muted: rgba(239, 68, 68, 0.1);
+
+  /* Semantic: text on accent background */
+  --text-on-accent: #000;
+
+  /* Overlays */
+  --overlay-backdrop: rgba(0, 0, 0, 0.5);
+  --overlay-subtle: rgba(0, 0, 0, 0.2);
+  --overlay-strong: rgba(0, 0, 0, 0.6);
 
   /* Effects */
   --radius-sm: 6px;

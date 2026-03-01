@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { isTauri } from '../api';
+import { useState, useEffect } from 'react';
+import { isTauri, getCollections, getStorageProvider, setStorageProvider } from '../api';
 import './StorageSettings.css';
 
 async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
@@ -12,10 +12,25 @@ type Provider = 'local' | 'gdrive' | 's3';
 
 interface StorageSettingsProps {
   onImportComplete?: () => void;
+  onProviderChange?: (provider: string) => void;
 }
 
-export function StorageSettings({ onImportComplete }: StorageSettingsProps) {
-  const [provider, setProvider] = useState<Provider>('local');
+export function StorageSettings({ onImportComplete, onProviderChange }: StorageSettingsProps) {
+  const [provider, setProviderState] = useState<Provider>('local');
+
+  useEffect(() => {
+    if (!isTauri) return;
+    getStorageProvider()
+      .then((s) => setProviderState((s.provider as Provider) || 'local'))
+      .catch(() => {});
+  }, []);
+
+  const setProvider = (p: Provider) => {
+    setProviderState(p);
+    if (isTauri) {
+      setStorageProvider(p).then(() => onProviderChange?.(p)).catch(() => {});
+    }
+  };
   const [s3Bucket, setS3Bucket] = useState('');
   const [s3Region, setS3Region] = useState('us-east-1');
   const [s3AccessKey, setS3AccessKey] = useState('');
@@ -182,6 +197,27 @@ export function StorageSettings({ onImportComplete }: StorageSettingsProps) {
         />
         <button type="button" onClick={() => document.getElementById('postman-import')?.click()}>
           Import Postman v2.1
+        </button>
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              const collections = await getCollections();
+              const json = JSON.stringify(collections, null, 2);
+              const blob = new Blob([json], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `saola-collections-${new Date().toISOString().slice(0, 10)}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+              setSyncStatus('Exported collections');
+            } catch (err) {
+              setSyncStatus(`Export error: ${err}`);
+            }
+          }}
+        >
+          Export Collections (JSON)
         </button>
       </div>
 

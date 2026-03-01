@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Collection, CollectionItem } from '../types';
 import './SaveToCollectionModal.css';
 
@@ -46,6 +46,14 @@ export function SaveToCollectionModal({
 }: SaveToCollectionModalProps) {
   const [name, setName] = useState(defaultName);
   const [parentId, setParentId] = useState(collections[0]?.id ?? '');
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (open) window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open, onClose]);
 
   if (!open) return null;
 

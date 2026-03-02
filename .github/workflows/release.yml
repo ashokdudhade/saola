@@ -54,7 +54,7 @@ jobs:
 
             ### Downloads
             - **Windows:** `.msi` or `.exe` installer
-            - **macOS:** `.dmg` (Intel and Apple Silicon)
+            - **macOS:** `.dmg` — **aarch64** for Apple Silicon (M1/M2/M3), **x64** for Intel
             - **Linux:** `.deb` (Debian/Ubuntu) or `.rpm` (Fedora/RHEL)
 
             ### Install

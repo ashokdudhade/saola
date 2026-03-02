@@ -20,6 +20,11 @@ Secure & Private API Development Platform — cross-platform desktop API client 
 - **Request engine:** reqwest (rustls)
 - **E2EE:** aes-gcm
 
+## macOS note
+
+- **"Not supported on this Mac"** — Use **aarch64** for Apple Silicon (M1/M2/M3), **x64** for Intel.
+- **"Cannot be verified"** — Right-click → **Open** → **Open**. Or use **System Settings** → **Privacy & Security** → **Open Anyway**.
+
 ## Quick Start
 
 ### Run in browser (dev, no Tauri)

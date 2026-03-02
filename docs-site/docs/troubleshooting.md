@@ -5,6 +5,19 @@ title: Troubleshooting
 
 # Troubleshooting
 
+## macOS: "Not supported on this Mac"
+
+You likely downloaded the wrong architecture. Use **aarch64** for Apple Silicon (M1/M2/M3) or **x64** for Intel Macs. Re-download the correct `.dmg` from the release assets.
+
+## macOS: "App cannot be opened" or "Developer cannot be verified"
+
+macOS Gatekeeper blocks apps that are not code-signed by an Apple Developer ID. To run Saola:
+
+1. **Right-click** the Saola app → **Open** → click **Open** in the dialog.
+2. Or go to **System Settings** → **Privacy & Security** → scroll to "Security" → click **Open Anyway** next to the Saola message.
+
+This is required once per download. For fully signed builds, the app would need Apple code signing (Developer ID) and notarization.
+
 ## App won't start
 
 - Ensure you have the required system dependencies. On Linux, install WebKit GTK and related libraries if prompted.

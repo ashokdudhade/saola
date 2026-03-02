@@ -15,9 +15,15 @@ Saola is distributed via [GitHub Releases](https://github.com/ashokdudhade/saola
 
 ## macOS
 
-1. Download the `.dmg` file (choose Intel or Apple Silicon based on your Mac).
+**Which .dmg?**
+- **Apple Silicon (M1, M2, M3)** → `Saola_*_aarch64.dmg`
+- **Intel Mac** → `Saola_*_x64.dmg`
+
+1. Download the correct `.dmg` from the release assets.
 2. Open the `.dmg` and drag Saola to the Applications folder.
 3. Launch Saola from Applications.
+
+**If macOS blocks the app** ("cannot be verified"): Right-click the app → **Open** → **Open** again. Or **System Settings** → **Privacy & Security** → **Open Anyway**.
 
 ## Linux
 
